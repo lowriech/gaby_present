@@ -1,4 +1,4 @@
-import { gentleOrbit, slowDrift, circle } from './lightAnimations'
+import { gentleOrbit, circle } from './lightAnimations'
 
 export type Vec3 = [number, number, number]
 
@@ -208,8 +208,6 @@ export const sceneObjects: SceneObjectDef[] = [
     },
   },
 ]
-
-const pictureUri = '/images/airplane_goofy.jpeg'
 
 export const entries: ScrollEntry[] = [
   {

@@ -69,8 +69,7 @@ export default function SpotifyPlayer({ trackId }: { trackId: string | null }) {
       ctrl.addListener('playback_update', (e: unknown) => {
         const d = (e as { data: { isPaused: boolean; duration: number; position: number } }).data
         if (d.isPaused && d.duration > 0 && d.position >= d.duration - 500) {
-          ctrl.restart()
-          ctrl.play()
+          ctrl.loadUri(uri)
         }
       })
     })
