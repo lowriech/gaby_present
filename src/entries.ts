@@ -55,6 +55,8 @@ export type ScrollEntry = {
   spotify?: { trackId: string } | 'none'
 }
 
+const withBase = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
+
 const entryText = `
 Wonderful Gaby,\n
 I made this as a little way of capturing the joy of being with you.\n
@@ -81,7 +83,7 @@ This first scene represents connecting with you at MFC.
 
 const Bergen = {
   type: "picture",
-  src: "/images/bergen.jpeg",
+  src: withBase("images/bergen.jpeg"),
   caption: `I went off to Bergen,\n
   and had so much fun and ease messaging with you.
   `,
@@ -89,7 +91,7 @@ const Bergen = {
 
 const FirstDate = {
   type: "picture",
-  src: "/images/text.png",
+  src: withBase("images/text.png"),
   caption: `
   (I scrolled through so many 😘 to find this.)
   `,
@@ -106,19 +108,19 @@ const SafariText = {
 
 const Dating = {
   type: "picture",
-  src: "/images/canoe.jpeg",
+  src: withBase("images/canoe.jpeg"),
   revealDuration: 800,
 } as Foreground
 
 const Swing = {
   type: "picture",
-  src: "/images/swing.jpeg",
+  src: withBase("images/swing.jpeg"),
   revealDuration: 800,
 } as Foreground
 
 const HotInLove = {
   type: "picture",
-  src: "/images/hot_in_love.jpeg",
+  src: withBase("images/hot_in_love.jpeg"),
   caption: `
   So Hot. So In Love..
   `,
@@ -127,7 +129,7 @@ const HotInLove = {
 
 const FireTender = {
   type: "picture",
-  src: "/images/fire_tender.jpeg",
+  src: withBase("images/fire_tender.jpeg"),
   caption: `
   A fucking adorable.
   Collaborative.
@@ -149,7 +151,7 @@ const ClosingMessage = {
 export const sceneObjects: SceneObjectDef[] = [
   {
     id: 'trees1',
-    meshPath: '/meshes/pine_tree.glb',
+    meshPath: withBase('meshes/pine_tree.glb'),
     defaults: {
       position: [-10, -10, -10],
       rotation: [0, 0, 0],
@@ -159,7 +161,7 @@ export const sceneObjects: SceneObjectDef[] = [
   },
   {
     id: 'trees2',
-    meshPath: '/meshes/pine_tree.glb',
+    meshPath: withBase('meshes/pine_tree.glb'),
     defaults: {
       position: [10, -10, -10],
       rotation: [0, 0, 0],
@@ -169,7 +171,7 @@ export const sceneObjects: SceneObjectDef[] = [
   },
   {
     id: 'manta',
-    meshPath: '/meshes/manta.glb',
+    meshPath: withBase('meshes/manta.glb'),
     defaults: {
       position: [10, -100, 10],
       rotation: [0, 1, 0],
@@ -179,7 +181,7 @@ export const sceneObjects: SceneObjectDef[] = [
   },
   {
     id: 'blackberry',
-    meshPath: '/meshes/blackberries.glb',
+    meshPath: withBase('meshes/blackberries.glb'),
     defaults: {
       position: [2, 0, 0],
       rotation: [0, 0, 0],
@@ -189,7 +191,7 @@ export const sceneObjects: SceneObjectDef[] = [
   },
   {
     id: "zebra",
-    meshPath: '/meshes/zebra.glb',
+    meshPath: withBase('meshes/zebra.glb'),
     defaults: {
       position: [-10, 0, 0],
       rotation: [0, 0, 0],
@@ -199,7 +201,7 @@ export const sceneObjects: SceneObjectDef[] = [
   },
   {
     id: "mud",
-    meshPath: '/meshes/mud_material.glb',
+    meshPath: withBase('meshes/mud_material.glb'),
     defaults: {
       position: [0, -100, 0],
       rotation: [0, 0, 0],
@@ -383,7 +385,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    foreground: { type: 'picture', src: "images/desk.jpeg" },
+    foreground: { type: 'picture', src: withBase("images/desk.jpeg") },
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
@@ -391,7 +393,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    foreground: { type: 'picture', src: "images/wood_porch.jpeg", caption: "Hawt" },
+    foreground: { type: 'picture', src: withBase("images/wood_porch.jpeg"), caption: "Hawt" },
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
@@ -401,7 +403,7 @@ export const entries: ScrollEntry[] = [
 
   {
     spotify: { trackId: '2Nm0IGkliIwWjSBINf3KjG' },
-    foreground: { type: 'picture', src: "images/xc.jpeg", caption: "More please." },
+    foreground: { type: 'picture', src: withBase("images/xc.jpeg"), caption: "More please." },
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
@@ -409,7 +411,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    foreground: { type: "picture", src: "images/wood_with_ash.jpeg" },
+    foreground: { type: "picture", src: withBase("images/wood_with_ash.jpeg") },
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
@@ -418,7 +420,7 @@ export const entries: ScrollEntry[] = [
   },
   {
     spotify: "none",
-    audio: { src: '/GettingBetter.m4a' },
+    audio: { src: withBase('GettingBetter.m4a') },
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
