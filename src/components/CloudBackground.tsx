@@ -1,4 +1,4 @@
-import { useRef, useMemo, Suspense, type RefObject } from 'react'
+import { useRef, useMemo, useEffect, Suspense, type RefObject } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import vertexShader from '../shaders/cloud.vert'
@@ -224,6 +224,40 @@ interface CloudBackgroundProps {
   containerRef: RefObject<HTMLDivElement | null>
 }
 
+function SceneEffectsManager({ scrollY }: { scrollY: number }) {
+  const { scene } = useThree()
+  const activeStepRef = useRef<number | null>(null)
+
+  useFrame(() => {
+    const segments = entries.length - 1
+    const targetStep = Math.min(Math.round(scrollY * segments), segments)
+    const currentStep = activeStepRef.current
+
+    if (currentStep === null) {
+      entries[targetStep].sceneEffect?.addToScene?.(scene)
+      activeStepRef.current = targetStep
+      return
+    }
+
+    if (targetStep !== currentStep) {
+      entries[currentStep].sceneEffect?.cleanup?.(scene)
+      entries[targetStep].sceneEffect?.addToScene?.(scene)
+      activeStepRef.current = targetStep
+    }
+  })
+
+  useEffect(() => {
+    return () => {
+      const currentStep = activeStepRef.current
+      if (currentStep != null) {
+        entries[currentStep].sceneEffect?.cleanup?.(scene)
+      }
+    }
+  }, [scene])
+
+  return null
+}
+
 export default function CloudBackground({ containerRef }: CloudBackgroundProps) {
   const scrollY = useScrollPosition(containerRef)
 
@@ -245,6 +279,7 @@ export default function CloudBackground({ containerRef }: CloudBackgroundProps) 
         <SmokeQuad scrollY={scrollY} />
         <ambientLight intensity={0.3} />
         <ScenePointLights scrollY={scrollY} />
+        <SceneEffectsManager scrollY={scrollY} />
         <Suspense fallback={null}>
           {sceneObjects.map((obj) => (
             <AnimatedSceneObject

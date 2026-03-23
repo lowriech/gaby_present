@@ -7,6 +7,11 @@ export interface CircleConfig {
   speed: number
 }
 
+export interface JitterConfig {
+  speed: number
+  amplitude: number
+}
+
 export function circle(light1: CircleConfig, light2: CircleConfig): LightIdleAnimation {
   const dir1 = light1.clockwise ? -1 : 1
   const dir2 = light2.clockwise ? -1 : 1
@@ -39,6 +44,19 @@ export function gentleOrbit(radius: number, speed: number): LightIdleAnimation {
     light2: {
       dx: (Math.cos(t * speed + Math.PI) + 1) * radius,
       dy: Math.sin(t * speed + Math.PI) * radius,
+    },
+  })
+}
+
+export function jitter(light1: JitterConfig, light2: JitterConfig): LightIdleAnimation {
+  return (t) => ({
+    light1: {
+      dx: 0,
+      dy: Math.abs(Math.sin(t * light1.speed)) * light1.amplitude,
+    },
+    light2: {
+      dx: 0,
+      dy: Math.abs(Math.sin(t * light2.speed)) * light2.amplitude,
     },
   })
 }

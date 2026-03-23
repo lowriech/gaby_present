@@ -1,4 +1,5 @@
-import { gentleOrbit, circle } from './lightAnimations'
+import { gentleOrbit, circle, jitter } from './lightAnimations'
+import type { Scene } from 'three'
 
 export type Vec3 = [number, number, number]
 
@@ -48,11 +49,17 @@ export type Background = {
   lightAnimation?: LightIdleAnimation
 }
 
+export type SceneEffect = {
+  addToScene?: (scene: Scene) => void
+  cleanup?: (scene: Scene) => void
+}
+
 export type ScrollEntry = {
   foreground?: Foreground
   background: Background
   audio?: { src: string }
   spotify?: { trackId: string } | 'none'
+  sceneEffect?: SceneEffect
 }
 
 const withBase = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
@@ -282,7 +289,7 @@ export const entries: ScrollEntry[] = [
       color: '#e8a44a',
       animationTime: 4,
       lights: { light1: { x: 0.75, y: 0.5, color: '#e8a44a' }, light2: { x: 0.75, y: 1.0, color: '#a44ae8' } },
-      lightAnimation: gentleOrbit(0.01, 1),
+      lightAnimation: jitter({ speed: 10, amplitude: 0.025 }, { speed: 0, amplitude: 0 }),
     },
   },
   {
