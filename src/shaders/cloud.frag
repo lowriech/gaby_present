@@ -10,6 +10,12 @@ uniform vec2 uLight2Pos;
 uniform vec3 uLight1Color;
 uniform vec3 uLight2Color;
 
+#define MAX_EXTRA_LIGHTS 32
+uniform int uExtraLightCount;
+uniform vec2 uExtraLightPos[MAX_EXTRA_LIGHTS];
+uniform vec3 uExtraLightColor[MAX_EXTRA_LIGHTS];
+uniform float uExtraLightIntensity[MAX_EXTRA_LIGHTS];
+
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
@@ -128,6 +134,14 @@ void main() {
   vec3 color =
     vec3(cloudIntensity1 * cl) * lightColor1 + lightIntensity1 * lightColor1 +
     vec3(cloudIntensity2 * cl) * lightColor2 + lightIntensity2 * lightColor2;
+
+  for (int i = 0; i < MAX_EXTRA_LIGHTS; i++) {
+    if (i >= uExtraLightCount) break;
+    float d = distance(uv, uExtraLightPos[i]);
+    float ci = max(0.7 * (1.0 - 2.5 * d), 0.0);
+    float li = 1.0 / (100.0 * d);
+    color += (vec3(ci * cl) + li) * uExtraLightColor[i] * uExtraLightIntensity[i];
+  }
 
   color = max(color, vec3(0.0));
   color = color / (1.0 + color);

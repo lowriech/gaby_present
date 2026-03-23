@@ -1,5 +1,6 @@
-import { gentleOrbit, circle, jitter } from './lightAnimations'
+import { gentleOrbit, circle, jitter, figure8 } from './lightAnimations'
 import type { Scene } from 'three'
+import { backgroundLights } from './sceneEffects'
 
 export type Vec3 = [number, number, number]
 
@@ -218,6 +219,8 @@ export const sceneObjects: SceneObjectDef[] = [
   },
 ]
 
+const backgroundLightsEffect = backgroundLights({ count: 50, radiusMin: 0.01, radiusMax: 0.02, speedMin: 1, speedMax: 2, intensity: 0.025, fadeDurationSec: 1 })
+
 export const entries: ScrollEntry[] = [
   {
     foreground: { type: 'message', text: entryText, revealDuration: 3000 },
@@ -259,18 +262,27 @@ export const entries: ScrollEntry[] = [
         trees2: { position: [10, -10, -2], rotation: [0, -0.3, 0] },
       },
     },
+    sceneEffect: {
+      addToScene: backgroundLightsEffect.addToScene,
+    },
   },
 
   {
     background: {
       color: '#e8a44a',
       animationTime: 4,
-      lights: { light1: { x: 0.74, y: 0.5, color: '#e8a44a' }, light2: { x: 0.76, y: 0.5, color: '#a44ae8' } },
-      lightAnimation: gentleOrbit(0.07, 1.5),
+      lights: { light1: { x: 0.74, y: 0.75, color: '#e8a44a' }, light2: { x: 0.76, y: 0.75, color: '#a44ae8' } },
+      lightAnimation: figure8(
+        { width: 0.07, height: 0.05, speed: 1.5 }, 
+        { width: 0.07, height: 0.05, speed: 1.5 }
+      ),
       objects: {
         trees1: { position: [-10, -10, 10], rotation: [0, -0.3, 0] },
         trees2: { position: [10, -10, 10], rotation: [0, -0.3, 0] },
       },
+    },
+    sceneEffect: {
+      cleanup: backgroundLightsEffect.cleanup,
     },
   },
   {

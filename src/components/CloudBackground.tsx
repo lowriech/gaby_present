@@ -5,7 +5,10 @@ import vertexShader from '../shaders/cloud.vert'
 import fragmentShader from '../shaders/cloud.frag'
 import { useScrollPosition } from '../hooks/useScrollPosition'
 import { entries, sceneObjects } from '../entries'
+import { extraLightsStore } from '../sceneEffects'
 import AnimatedSceneObject from './AnimatedSceneObject'
+
+const MAX_EXTRA_LIGHTS = 32
 
 function smoothstep(t: number): number {
   return t * t * (3 - 2 * t)
@@ -48,6 +51,10 @@ function SmokeQuad({ scrollY }: { scrollY: number }) {
       uLight2Pos: { value: new THREE.Vector2(step0.light2.x, step0.light2.y) },
       uLight1Color: { value: new THREE.Color(step0.light1.color) },
       uLight2Color: { value: new THREE.Color(step0.light2.color) },
+      uExtraLightCount: { value: 0 },
+      uExtraLightPos: { value: Array.from({ length: MAX_EXTRA_LIGHTS }, () => new THREE.Vector2()) },
+      uExtraLightColor: { value: Array.from({ length: MAX_EXTRA_LIGHTS }, () => new THREE.Vector3()) },
+      uExtraLightIntensity: { value: new Float32Array(MAX_EXTRA_LIGHTS) },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -118,6 +125,18 @@ function SmokeQuad({ scrollY }: { scrollY: number }) {
     mat.uniforms.uTime.value = elapsed
     mat.uniforms.uScrollY.value = scrollY
     mat.uniforms.uResolution.value.set(size.width, size.height)
+
+    const extraCount = Math.min(extraLightsStore.length, MAX_EXTRA_LIGHTS)
+    mat.uniforms.uExtraLightCount.value = extraCount
+    const posArr = mat.uniforms.uExtraLightPos.value as THREE.Vector2[]
+    const colArr = mat.uniforms.uExtraLightColor.value as THREE.Vector3[]
+    const intArr = mat.uniforms.uExtraLightIntensity.value as Float32Array
+    for (let i = 0; i < extraCount; i++) {
+      const el = extraLightsStore[i]
+      posArr[i].set(el.x, el.y * centerY * 2)
+      colArr[i].set(el.r, el.g, el.b)
+      intArr[i] = el.intensity
+    }
   })
 
   return (

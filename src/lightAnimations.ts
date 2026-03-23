@@ -61,6 +61,37 @@ export function jitter(light1: JitterConfig, light2: JitterConfig): LightIdleAni
   })
 }
 
+export interface Figure8Config {
+  width: number
+  height: number
+  speed: number
+  phase?: number
+}
+
+export function figure8(light1: Figure8Config, light2: Figure8Config): LightIdleAnimation {
+  const p1 = light1.phase ?? 0
+  const p2 = light2.phase ?? 0
+  const dx1_0 = Math.sin(p1) * light1.width
+  const dy1_0 = Math.sin(2 * p1) * 0.5 * light1.height
+  const dx2_0 = Math.sin(p2) * light2.width
+  const dy2_0 = Math.sin(2 * p2) * 0.5 * light2.height
+
+  return (t) => {
+    const a1 = t * light1.speed + p1
+    const a2 = t * light2.speed + p2
+    return {
+      light1: {
+        dx: Math.sin(a1) * light1.width - dx1_0,
+        dy: Math.sin(2 * a1) * 0.5 * light1.height - dy1_0,
+      },
+      light2: {
+        dx: Math.sin(a2) * light2.width - dx2_0,
+        dy: Math.sin(2 * a2) * 0.5 * light2.height - dy2_0,
+      },
+    }
+  }
+}
+
 export function slowDrift(amplitude: number, speed: number): LightIdleAnimation {
   return (t) => ({
     light1: { dx: Math.sin(t * speed) * amplitude, dy: Math.cos(t * speed * 0.7) * amplitude * 0.5 },
