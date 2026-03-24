@@ -16,6 +16,18 @@ uniform vec2 uExtraLightPos[MAX_EXTRA_LIGHTS];
 uniform vec3 uExtraLightColor[MAX_EXTRA_LIGHTS];
 uniform float uExtraLightIntensity[MAX_EXTRA_LIGHTS];
 
+#define MAX_PULSES 8
+uniform float uArcEnabled;
+uniform float uArcCurvature;
+uniform vec3  uArcColor;
+uniform float uArcWidth;
+uniform float uArcIntensity;
+uniform int   uPulseCount;
+uniform float uPulseCenter[MAX_PULSES];
+uniform float uPulseHalfLength[MAX_PULSES];
+uniform vec3  uPulseColor[MAX_PULSES];
+uniform float uPulseIntensity[MAX_PULSES];
+
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
@@ -141,6 +153,39 @@ void main() {
     float ci = max(0.7 * (1.0 - 2.5 * d), 0.0);
     float li = 1.0 / (100.0 * d);
     color += (vec3(ci * cl) + li) * uExtraLightColor[i] * uExtraLightIntensity[i];
+  }
+
+  if (uArcEnabled > 0.5) {
+    vec2 arcDir  = normalize(uLight2Pos - uLight1Pos);
+    vec2 arcPerp = vec2(-arcDir.y, arcDir.x);
+    vec2 ctrl = (uLight1Pos + uLight2Pos) * 0.5 + arcPerp * uArcCurvature;
+
+    // Sample the quadratic bezier to find the closest t and minimum distance
+    float minDist = 1e6;
+    float closestT = 0.0;
+    for (int i = 0; i <= 64; i++) {
+      float t = float(i) / 64.0;
+      float mt = 1.0 - t;
+      vec2 pos = mt * mt * uLight1Pos + 2.0 * t * mt * ctrl + t * t * uLight2Pos;
+      float d = distance(uv, pos);
+      if (d < minDist) {
+        minDist = d;
+        closestT = t;
+      }
+    }
+
+    // Base arc glow
+    float arcG = exp(-minDist / uArcWidth) * uArcIntensity;
+    color += arcG * uArcColor;
+
+    // Pulses — each fades on both spatial ends
+    for (int i = 0; i < MAX_PULSES; i++) {
+      if (i >= uPulseCount) break;
+      float dt = abs(closestT - uPulseCenter[i]);
+      float fade = max(0.0, 1.0 - dt / uPulseHalfLength[i]);
+      fade *= fade;
+      color += exp(-minDist / uArcWidth) * fade * uPulseIntensity[i] * uPulseColor[i];
+    }
   }
 
   color = max(color, vec3(0.0));

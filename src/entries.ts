@@ -1,6 +1,6 @@
 import { gentleOrbit, circle, jitter, figure8 } from './lightAnimations'
 import type { Scene } from 'three'
-import { backgroundLights } from './sceneEffects'
+import { backgroundLights, messageEffect, sparkleLights } from './sceneEffects'
 
 export type Vec3 = [number, number, number]
 
@@ -55,12 +55,40 @@ export type SceneEffect = {
   cleanup?: (scene: Scene) => void
 }
 
+export type ImageClip = {
+  src: string
+  /** Screen position as CSS values, e.g. `{ x: '50%', y: '50%' }` */
+  position: { x: string; y: string }
+  /** Seconds after entry activation to begin fading in */
+  startTime: number
+  /** Seconds after entry activation to begin fading out */
+  endTime: number
+  width?: string
+  /** Uniform scale applied to the image. Defaults to 1. */
+  scale?: number
+}
+
+export type ForegroundAnimation =
+  | {
+      type: 'imageSequence'
+      clips: ImageClip[]
+      /**
+       * How far above the anchor point to float the image, as a CSS length.
+       * e.g. `'10vh'`, `'50px'`. Defaults to `'0px'` (bottom of image sits on
+       * the anchor point).
+       */
+      verticalOffset?: string
+    }
+
 export type ScrollEntry = {
   foreground?: Foreground
+  foregroundAnimation?: ForegroundAnimation
   background: Background
   audio?: { src: string }
   spotify?: { trackId: string } | 'none'
   sceneEffect?: SceneEffect
+  /** Seconds to wait before automatically scrolling to the next entry */
+  autoScrollDelay?: number
 }
 
 const withBase = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
@@ -101,7 +129,7 @@ const FirstDate = {
   type: "picture",
   src: withBase("images/text.png"),
   caption: `
-  (I scrolled through so many 😘 to find this.)
+  Palpable Excitement
   `,
   revealDuration: 3000,
 } as Foreground
@@ -251,7 +279,7 @@ export const entries: ScrollEntry[] = [
   },
   {
     spotify: { trackId: '6xiTXiZhECholKGfvDormV' },
-    foreground: MFC,
+    autoScrollDelay: 5,
     background: {
       color: '#e8a44a',
       animationTime: 4,
@@ -268,17 +296,18 @@ export const entries: ScrollEntry[] = [
   },
 
   {
+    autoScrollDelay: 10,
     background: {
       color: '#e8a44a',
       animationTime: 4,
       lights: { light1: { x: 0.74, y: 0.75, color: '#e8a44a' }, light2: { x: 0.76, y: 0.75, color: '#a44ae8' } },
       lightAnimation: figure8(
-        { width: 0.07, height: 0.05, speed: 1.5 }, 
-        { width: 0.07, height: 0.05, speed: 1.5 }
+        { width: 0.21, height: 0.15, speed: 0.3, beat: 0.5 }, 
+        { width: 0.21, height: 0.15, speed: 0.3, beat: 0.5 }
       ),
       objects: {
-        trees1: { position: [-10, -10, 10], rotation: [0, -0.3, 0] },
-        trees2: { position: [10, -10, 10], rotation: [0, -0.3, 0] },
+        trees1: { position: [-10, -10, 2], rotation: [0, -0.3, 0] },
+        trees2: { position: [10, -10, 2], rotation: [0, -0.3, 0] },
       },
     },
     sceneEffect: {
@@ -286,13 +315,46 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    spotify: "none",
-    foreground: Bergen,
+    autoScrollDelay: 50,
     background: {
       color: '#e8a44a',
       animationTime: 4,
-      lights: { light1: { x: 0.3, y: 0.5, color: '#e8a44a' }, light2: { x: 2.0, y: 0.5, color: '#a44ae8' } },
+      lights: { light1: { x: 0.3, y: 0.5, color: '#e8a44a' }, light2: { x: 1.2, y: 0.5, color: '#a44ae8' } },
+      objects: {
+        trees1: { position: [-10, -10, 10], rotation: [0, -0.3, 0] },
+        trees2: { position: [10, -10, 10], rotation: [0, -0.3, 0] },
+      }
     },
+    foregroundAnimation: {
+      type: 'imageSequence',
+      clips: [
+        { src: withBase("images/whatsapp/wa1.jpg"), scale: 0.8, position: { x: '70%', y: '50%' }, startTime: 5.1, endTime: 9.5, width: '30%' },
+        { src: withBase("images/whatsapp/wa2.jpg"), position: { x: '30%', y: '50%' }, startTime: 11.1, endTime: 15.5, width: '30%' },
+        { src: withBase("images/whatsapp/wa3.jpg"), position: { x: '70%', y: '50%' }, startTime: 17.1, endTime: 21.5, width: '30%' },
+        { src: withBase("images/whatsapp/wa4.jpg"), position: { x: '30%', y: '50%' }, startTime: 23.1, endTime: 27.5, width: '30%' },
+        { src: withBase("images/whatsapp/wa5.jpg"), position: { x: '70%', y: '50%' }, startTime: 29.1, endTime: 33.5, width: '30%' },
+        { src: withBase("images/whatsapp/wa6.jpg"), position: { x: '30%', y: '50%' }, startTime: 35.1, endTime: 39.5, width: '30%' },
+        { src: withBase("images/whatsapp/wa7.jpg"), position: { x: '70%', y: '50%' }, startTime: 41.1, endTime: 45.5, width: '30%' },
+      ],
+    },
+    sceneEffect: messageEffect({
+      arcLength: 0.18,
+      arcCurvature: 0.1,
+      arcColor: 0xffffff,
+      arcIntensity: 0.12,
+      arcWidth: 0.004,
+      pulseColor: 0xffffff,
+      pulseIntensity: 1.8,
+      pulses: [
+        { startSec:  4, endSec:  5, direction: 'forward'  }, // wa1 — opens the chat
+        { startSec:  10, endSec:  11, direction: 'reverse'  }, // wa2 — reply
+        { startSec:  16, endSec:  17, direction: 'forward'  }, // wa3
+        { startSec: 22, endSec: 23, direction: 'reverse'  }, // wa4 — reply
+        { startSec: 28, endSec: 29, direction: 'forward'  }, // wa5
+        { startSec: 34, endSec: 35, direction: 'reverse'  }, // wa6 — reply
+        { startSec: 40, endSec: 41, direction: 'forward'  }, // wa7 — final message
+      ],
+    })
   },
   {
     spotify: "none",
@@ -305,8 +367,8 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-
     spotify: { trackId: '0IIxiwinMqP0dpxbVyOU1y' },
+    autoScrollDelay: 10,
     background: {
       color: '#e8a44a',
       animationTime: 4,
@@ -316,6 +378,7 @@ export const entries: ScrollEntry[] = [
   },
   // Blackberry
   {
+    autoScrollDelay: 10,
     background: {
       color: '#e8a44a',
       animationTime: 4,
@@ -362,8 +425,11 @@ export const entries: ScrollEntry[] = [
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
-      lights: { light1: { x: 0.5, y: 0.5, color: '#ff69b4' }, light2: { x: 1, y: 0.5, color: '#e8a44a' } },
-      lightAnimation: gentleOrbit(0.01, 1.5),
+      lights: { light1: { x: 0.45, y: 0.75, color: '#ff69b4' }, light2: { x: 1.05, y: 0.75, color: '#e8a44a' } },
+      lightAnimation: circle(
+        { startAngle: Math.PI, clockwise: true, radius: 0.3, speed: 0.8 }, 
+        { startAngle: 0, clockwise: true, radius: 0.3, speed: 0.8 }
+      ),
       objects: {
         zebra: { position: [-10, 0, 0], rotation: [0, 0, 0], scale: [0.0008, 0.0008, 0.0008] },
       },
@@ -374,16 +440,23 @@ export const entries: ScrollEntry[] = [
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
-      lights: { light1: { x: 0.5, y: 0.5, color: '#ff69b4' }, light2: { x: 1, y: 0.5, color: '#e8a44a' } },
-      lightAnimation: gentleOrbit(0.01, 1.5),
+      lights: { light1: { x: 0.5, y: 0.75, color: '#ff69b4' }, light2: { x: 1, y: 0.75, color: '#e8a44a' } },
+      lightAnimation: circle(
+        { startAngle: Math.PI, clockwise: true, radius: 0.3, speed: 0.8 }, 
+        { startAngle: 0, clockwise: true, radius: 0.3, speed: 0.8 }
+      ),
     },
   },
   {
+    autoScrollDelay: 10,
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
       lights: { light1: { x: 0.745, y: 0.75, color: '#ff69b4' }, light2: { x: 0.755, y: 0.75, color: '#e8a44a' } },
-      lightAnimation: gentleOrbit(0.01, 1.5), 
+      lightAnimation: circle(
+        { startAngle: Math.PI, clockwise: true, radius: 0.3, speed: 0.8 }, 
+        { startAngle: 0, clockwise: true, radius: 0.3, speed: 0.8 }
+      ),
     },
   },
   {
@@ -434,7 +507,65 @@ export const entries: ScrollEntry[] = [
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
-      lights: { light1: { x: 0.25, y: 0.45, color: '#4ae8a4' }, light2: { x: 0.75, y: 0.55, color: '#a44ae8' } },
+      lights: { light1: { x: 0.25, y: 0.75, color: '#ff69b4' }, light2: { x: 1.25, y: 0.75, color: '#e8a44a' } },
+    },
+    sceneEffect: sparkleLights({
+      count: 60,
+      radiusMin: 0.01,
+      radiusMax: 0.02,
+      speedMin: 1,
+      speedMax: 2,
+      intensity: 0.5,
+      fadeDurationSec: 1,
+      populateTime: 10,
+    }),
+    foregroundAnimation: {
+      type: 'imageSequence',
+      verticalOffset: '8px',
+      clips: [
+        {
+          src: withBase('images/friends/ankle1.jpeg'),
+          position: { x: '12%', y: '48%' },
+          width: '20vw',
+          startTime: 0.4,
+          endTime: 60,
+        },
+        {
+          src: withBase('images/friends/ankle2.jpeg'),
+          position: { x: '30%', y: '55%' },
+          width: '18vw',
+          startTime: 0.4,
+          endTime: 60,
+        },
+        {
+          src: withBase('images/friends/bday.jpeg'),
+          position: { x: '87%', y: '44%' },
+          width: '20vw',
+          startTime: 0.9,
+          endTime: 60,
+        },
+        {
+          src: withBase('images/friends/olivia.jpeg'),
+          position: { x: '16%', y: '88%' },
+          width: '19vw',
+          startTime: 1.4,
+          endTime: 60,
+        },
+        {
+          src: withBase('images/friends/zendin.jpeg'),
+          position: { x: '84%', y: '85%' },
+          width: '19vw',
+          startTime: 1.9,
+          endTime: 60,
+        },
+        {
+          src: withBase('images/friends/tina.jpeg'),
+          position: { x: '36%', y: '96%' },
+          width: '18vw',
+          startTime: 2.4,
+          endTime: 60,
+        },
+      ],
     },
   },
   {

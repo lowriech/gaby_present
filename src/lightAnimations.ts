@@ -66,6 +66,23 @@ export interface Figure8Config {
   height: number
   speed: number
   phase?: number
+  /** Duration of one beat (same time unit as t). When set, the light
+   *  reverses direction for 1 beat out of every 4-beat cycle. */
+  beat?: number
+}
+
+function figure8Angle(t: number, speed: number, phase: number, beat?: number): number {
+  if (beat == null) return t * speed + phase
+
+  const cycle = 4 * beat
+  const n = Math.floor(t / cycle)
+  const tau = t - n * cycle
+  const fwd = 3 * beat
+  const advance = tau < fwd
+    ? speed * tau
+    : speed * (6 * beat - tau)
+
+  return phase + n * speed * 2 * beat + advance
 }
 
 export function figure8(light1: Figure8Config, light2: Figure8Config): LightIdleAnimation {
@@ -77,8 +94,8 @@ export function figure8(light1: Figure8Config, light2: Figure8Config): LightIdle
   const dy2_0 = Math.sin(2 * p2) * 0.5 * light2.height
 
   return (t) => {
-    const a1 = t * light1.speed + p1
-    const a2 = t * light2.speed + p2
+    const a1 = figure8Angle(t, light1.speed, p1, light1.beat)
+    const a2 = figure8Angle(t, light2.speed, p2, light2.beat)
     return {
       light1: {
         dx: Math.sin(a1) * light1.width - dx1_0,

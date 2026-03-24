@@ -3,6 +3,7 @@ import { entries, getActiveTrackId } from './entries'
 import CloudBackground from './components/CloudBackground'
 import OpeningMessage from './components/OpeningMessage'
 import PictureEntry from './components/PictureEntry'
+import ForegroundAnimationOverlay from './components/ForegroundAnimationOverlay'
 import { useEntryStore } from './store'
 import { useEntryAudio } from './hooks/useEntryAudio'
 import SpotifyPlayer from './components/SpotifyPlayer'
@@ -49,10 +50,21 @@ export default function App() {
     return () => observer.disconnect()
   }, [activateEntry])
 
+  useEffect(() => {
+    const entry = entries[activeEntryIndex]
+    if (!entry?.autoScrollDelay) return
+    const nextPanel = panelRefs.current[activeEntryIndex + 1]
+    if (!nextPanel) return
+    const id = setTimeout(() => {
+      nextPanel.scrollIntoView({ behavior: 'smooth' })
+    }, entry.autoScrollDelay * 1000)
+    return () => clearTimeout(id)
+  }, [activeEntryIndex])
 
   return (
     <>
       <CloudBackground containerRef={containerRef} />
+      <ForegroundAnimationOverlay />
       <div
         ref={containerRef}
         className="relative z-10 h-screen overflow-y-scroll snap-y snap-mandatory"

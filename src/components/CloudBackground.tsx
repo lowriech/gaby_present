@@ -5,7 +5,7 @@ import vertexShader from '../shaders/cloud.vert'
 import fragmentShader from '../shaders/cloud.frag'
 import { useScrollPosition } from '../hooks/useScrollPosition'
 import { entries, sceneObjects } from '../entries'
-import { extraLightsStore } from '../sceneEffects'
+import { extraLightsStore, messageEffectStore, MAX_SHADER_PULSES } from '../sceneEffects'
 import AnimatedSceneObject from './AnimatedSceneObject'
 
 const MAX_EXTRA_LIGHTS = 32
@@ -55,6 +55,16 @@ function SmokeQuad({ scrollY }: { scrollY: number }) {
       uExtraLightPos: { value: Array.from({ length: MAX_EXTRA_LIGHTS }, () => new THREE.Vector2()) },
       uExtraLightColor: { value: Array.from({ length: MAX_EXTRA_LIGHTS }, () => new THREE.Vector3()) },
       uExtraLightIntensity: { value: new Float32Array(MAX_EXTRA_LIGHTS) },
+      uArcEnabled: { value: 0 },
+      uArcCurvature: { value: 0.1 },
+      uArcColor: { value: new THREE.Color(0xffffff) },
+      uArcWidth: { value: 0.004 },
+      uArcIntensity: { value: 0.15 },
+      uPulseCount: { value: 0 },
+      uPulseCenter: { value: new Float32Array(MAX_SHADER_PULSES) },
+      uPulseHalfLength: { value: new Float32Array(MAX_SHADER_PULSES) },
+      uPulseColor: { value: Array.from({ length: MAX_SHADER_PULSES }, () => new THREE.Color(0xffffff)) },
+      uPulseIntensity: { value: new Float32Array(MAX_SHADER_PULSES) },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -136,6 +146,30 @@ function SmokeQuad({ scrollY }: { scrollY: number }) {
       posArr[i].set(el.x, el.y * centerY * 2)
       colArr[i].set(el.r, el.g, el.b)
       intArr[i] = el.intensity
+    }
+
+    // Arc / message effect
+    const arc = messageEffectStore
+    mat.uniforms.uArcEnabled.value = arc.active ? 1 : 0
+    if (arc.active) {
+      mat.uniforms.uArcCurvature.value = arc.arcCurvature
+      ;(mat.uniforms.uArcColor.value as THREE.Color).copy(arc.arcColor)
+      mat.uniforms.uArcWidth.value = arc.arcWidth
+      mat.uniforms.uArcIntensity.value = arc.arcIntensity
+
+      const pulseCount = Math.min(arc.pulses.length, MAX_SHADER_PULSES)
+      mat.uniforms.uPulseCount.value = pulseCount
+      const pCenter = mat.uniforms.uPulseCenter.value as Float32Array
+      const pHalf = mat.uniforms.uPulseHalfLength.value as Float32Array
+      const pColor = mat.uniforms.uPulseColor.value as THREE.Color[]
+      const pIntensity = mat.uniforms.uPulseIntensity.value as Float32Array
+      for (let i = 0; i < pulseCount; i++) {
+        const p = arc.pulses[i]
+        pCenter[i] = p.center
+        pHalf[i] = p.halfLength
+        pColor[i].copy(p.color)
+        pIntensity[i] = p.intensity
+      }
     }
   })
 
