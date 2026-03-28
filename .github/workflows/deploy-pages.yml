@@ -36,8 +36,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_SPOTIFY_CLIENT_ID: ${{ secrets.VITE_SPOTIFY_CLIENT_ID }}
-          VITE_SPOTIFY_REDIRECT_URI: ${{ secrets.VITE_SPOTIFY_REDIRECT_URI }}
+          VITE_SPOTIFY_CLIENT_ID: d7b9cbb6af1946d4b12a0fe046914486
+          VITE_SPOTIFY_REDIRECT_URI: https://lowriech.github.io/gaby_present/
 
       - name: Add SPA fallback
         run: cp dist/index.html dist/404.html
