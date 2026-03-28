@@ -610,8 +610,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    autoScrollDelay: 5,
-    spotify: "none",
+    autoScrollDelay: 15,
     audio: { src: withBase('GettingBetter.m4a') },
     background: {
       color: '#4ae8a4',
@@ -624,19 +623,6 @@ export const entries: ScrollEntry[] = [
       objects: {
         manta: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [0.15, 0.15, 0.15] },
       }
-    },
-  },
-  {
-    autoScrollDelay: 10,
-    spotify: { trackId: '6dGnYIeXmHdcikdzNNDMm2', song_start_time: 10000 },
-    background: {
-      color: '#4ae8a4',
-      animationTime: 1.5,
-      lights: { light1: { x: 0.74, y: 1.1, color: '#4ae8a4' }, light2: { x: 0.76, y: 1.1, color: '#a44ae8' } },
-      lightAnimation: circle(
-        { startAngle: Math.PI, clockwise: false, radius: 0.01, speed: 2.5 },
-        { startAngle: Math.PI, clockwise: false, radius: 0.01, speed: 2.5 },
-      ),
     },
   },
   {
