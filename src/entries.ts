@@ -1,4 +1,4 @@
-import { gentleOrbit, circle, jitter, figure8 } from './lightAnimations'
+import { gentleOrbit, circle, jitter, figure8, lightAnimationSequence, scaledSine } from './lightAnimations'
 import type { Scene } from 'three'
 import { backgroundLights, messageEffect, sparkleLights } from './sceneEffects'
 
@@ -34,11 +34,23 @@ export type ResolvedObjectState = {
 export type Foreground =
   | { type: 'message'; text: string; revealDuration: number }
   | { type: 'picture'; src: string; caption?: string }
+  | {
+      type: 'sideBySideRecordings'
+      left: { icon: string; recording: string }
+      right: { icon: string; recording: string }
+      topCaption?: string
+      bottomCaption?: string
+    }
   | { type: 'none' }
 
 export type LightIdleAnimation = (t: number) => {
   light1: { dx: number; dy: number }
   light2: { dx: number; dy: number }
+}
+
+export type LightAnimationKeyframe = {
+  start_time: number
+  animation: LightIdleAnimation
 }
 
 export type Background = {
@@ -47,7 +59,7 @@ export type Background = {
   /** Seconds to animate into this step from the previous one */
   animationTime: number
   objects?: SceneObjectStates
-  lightAnimation?: LightIdleAnimation
+  lightAnimation?: LightIdleAnimation | LightAnimationKeyframe[]
 }
 
 export type SceneEffect = {
@@ -85,10 +97,10 @@ export type ScrollEntry = {
   foregroundAnimation?: ForegroundAnimation
   background: Background
   audio?: { src: string }
-  spotify?: { trackId: string } | 'none'
+  spotify?: { trackId: string; song_start_time?: number; fade_time?: number } | 'none'
   sceneEffect?: SceneEffect
-  /** Seconds to wait before automatically scrolling to the next entry */
-  autoScrollDelay?: number
+  /** Seconds to wait before automatically scrolling to the next entry. Defaults to 10. Set to 'none' to disable. */
+  autoScrollDelay?: number | 'none'
 }
 
 const withBase = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
@@ -107,22 +119,6 @@ You are an absolute light.\n
 And every day, I'm excited to be in your life.
 `,
   revealDuration: 3000,
-} as Foreground
-
-const MFC = {
-  type: 'message',
-  text: `
-This first scene represents connecting with you at MFC.
-`,
-  revealDuration: 3000,
-} as Foreground
-
-const Bergen = {
-  type: "picture",
-  src: withBase("images/bergen.jpeg"),
-  caption: `I went off to Bergen,\n
-  and had so much fun and ease messaging with you.
-  `,
 } as Foreground
 
 const FirstDate = {
@@ -177,9 +173,8 @@ const FireTender = {
 const ClosingMessage = {
   type: "message",
   text: `
-  I absolutely adore you.\n
-  Thanks for doing life with me.\n
-  The highs and lows, I'm so down.
+  Happy Birthday Gaby.\n
+  I love you a whole lot.
   `,
   revealDuration: 3000,
 } as Foreground
@@ -252,7 +247,7 @@ const backgroundLightsEffect = backgroundLights({ count: 50, radiusMin: 0.01, ra
 export const entries: ScrollEntry[] = [
   {
     foreground: { type: 'message', text: entryText, revealDuration: 3000 },
-    spotify: { trackId: '6IzBZ2pexrY2BI9D1OeUvI' },
+    spotify: { trackId: '6xiTXiZhECholKGfvDormV' },
     background: {
       color: '#e8a44a',
       animationTime: 0,
@@ -264,6 +259,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
+    autoScrollDelay: 6,
     foreground: secondEntry,
     background: {
       color: '#e8a44a',
@@ -278,8 +274,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    spotify: { trackId: '6xiTXiZhECholKGfvDormV' },
-    autoScrollDelay: 5,
+    autoScrollDelay: 8,
     background: {
       color: '#e8a44a',
       animationTime: 4,
@@ -296,14 +291,15 @@ export const entries: ScrollEntry[] = [
   },
 
   {
-    autoScrollDelay: 10,
+    autoScrollDelay: 27,
     background: {
       color: '#e8a44a',
       animationTime: 4,
       lights: { light1: { x: 0.74, y: 0.75, color: '#e8a44a' }, light2: { x: 0.76, y: 0.75, color: '#a44ae8' } },
       lightAnimation: figure8(
-        { width: 0.21, height: 0.15, speed: 0.3, beat: 0.5 }, 
-        { width: 0.21, height: 0.15, speed: 0.3, beat: 0.5 }
+        { width: 0.21, height: 0.15, speed: 0.3 }, 
+        { width: 0.21, height: 0.15, speed: 0.3 },
+        { bpm: 120, reverse_on_beats: [4] }
       ),
       objects: {
         trees1: { position: [-10, -10, 2], rotation: [0, -0.3, 0] },
@@ -315,7 +311,8 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    autoScrollDelay: 50,
+    spotify: { trackId: '3yPD6CHGE1xdJBWyu6ZBKk' },
+    autoScrollDelay: 40,
     background: {
       color: '#e8a44a',
       animationTime: 4,
@@ -332,9 +329,8 @@ export const entries: ScrollEntry[] = [
         { src: withBase("images/whatsapp/wa2.jpg"), position: { x: '30%', y: '50%' }, startTime: 11.1, endTime: 15.5, width: '30%' },
         { src: withBase("images/whatsapp/wa3.jpg"), position: { x: '70%', y: '50%' }, startTime: 17.1, endTime: 21.5, width: '30%' },
         { src: withBase("images/whatsapp/wa4.jpg"), position: { x: '30%', y: '50%' }, startTime: 23.1, endTime: 27.5, width: '30%' },
-        { src: withBase("images/whatsapp/wa5.jpg"), position: { x: '70%', y: '50%' }, startTime: 29.1, endTime: 33.5, width: '30%' },
-        { src: withBase("images/whatsapp/wa6.jpg"), position: { x: '30%', y: '50%' }, startTime: 35.1, endTime: 39.5, width: '30%' },
-        { src: withBase("images/whatsapp/wa7.jpg"), position: { x: '70%', y: '50%' }, startTime: 41.1, endTime: 45.5, width: '30%' },
+        { src: withBase("images/whatsapp/wa6.jpg"), position: { x: '70%', y: '50%' }, startTime: 29.1, endTime: 33.5, width: '30%' },
+        { src: withBase("images/whatsapp/wa5.jpg"), position: { x: '30%', y: '50%' }, startTime: 35.1, endTime: 39.5, width: '30%' },
       ],
     },
     sceneEffect: messageEffect({
@@ -352,12 +348,11 @@ export const entries: ScrollEntry[] = [
         { startSec: 22, endSec: 23, direction: 'reverse'  }, // wa4 — reply
         { startSec: 28, endSec: 29, direction: 'forward'  }, // wa5
         { startSec: 34, endSec: 35, direction: 'reverse'  }, // wa6 — reply
-        { startSec: 40, endSec: 41, direction: 'forward'  }, // wa7 — final message
       ],
     })
   },
   {
-    spotify: "none",
+    autoScrollDelay: 13.5,
     foreground: FirstDate,
     background: {
       color: '#e8a44a',
@@ -367,8 +362,8 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    spotify: { trackId: '0IIxiwinMqP0dpxbVyOU1y' },
-    autoScrollDelay: 10,
+    spotify: { trackId: '0IIxiwinMqP0dpxbVyOU1y', song_start_time: 106000 },
+    autoScrollDelay: 5,
     background: {
       color: '#e8a44a',
       animationTime: 4,
@@ -378,7 +373,7 @@ export const entries: ScrollEntry[] = [
   },
   // Blackberry
   {
-    autoScrollDelay: 10,
+    autoScrollDelay: 15,
     background: {
       color: '#e8a44a',
       animationTime: 4,
@@ -390,14 +385,14 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    spotify: { trackId: '1Rp2JzlulJtdD9ukeZIWon' },
+    autoScrollDelay: 8,
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
       lights: { light1: { x: 0.74, y: 0.8, color: '#ff69b4' }, light2: { x: 0.76, y: 0.8, color: '#e8a44a' } },
-      lightAnimation: circle(
-        { startAngle: 0, clockwise: true, radius: 0.02, speed: 1.2 },
-        { startAngle: 0, clockwise: true, radius: 0.02, speed: 1.2 },
+      lightAnimation: figure8(
+        { width: 0.02, height: 0.02, speed: 1.2 },
+        { width: 0.02, height: 0.02, speed: 1.2 },
       ),
       objects: {
         blackberry: { position: [-10, 0, 0], rotation: [0, 0, 0], scale: [0.05, 0.05, 0.05] },
@@ -407,20 +402,22 @@ export const entries: ScrollEntry[] = [
   },
   // Zebra
   {
-    foreground: SafariText,
+    autoScrollDelay: 8,
     background: {
       color: '#e8a44a',
       animationTime: 4,
-      lights: { light1: { x: 0.5, y: 0.5, color: '#ff69b4' }, light2: { x: 1, y: 0.5, color: '#e8a44a' } },
-      lightAnimation: gentleOrbit(0.01, 1.5),
+      lights: { light1: { x: 0.75, y: 0.5, color: '#ff69b4' }, light2: { x: 0.95, y: 0.57, color: '#e8a44a' } },
+      lightAnimation: circle(
+        { startAngle: 0, clockwise: true, radius: 0.0, speed: 1.5 },
+        { startAngle: 0, clockwise: false, radius: 0.035, speed: 20 }
+      ),
       objects: {
-        zebra: { position: [0, -0.15, 0], rotation: [0, 0, 0], scale: [0.05, 0.05, 0.05] },
+        zebra: { position: [-0.1, -0.1, 0], rotation: [0, -Math.PI/2, 0], scale: [0.05, 0.05, 0.05] },
         mud: { position: [0, -100, 0], rotation: [0, 0, 0], scale: [0.05, 0.05, 0.05] },
       },
     },
   },
   {
-    spotify: { trackId: '0gGSxG7r332R7Vgvk24GHY' },
     foreground: Dating,
     background: {
       color: '#4ae8a4',
@@ -448,19 +445,51 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    autoScrollDelay: 10,
+    autoScrollDelay: 37,
+    spotify: { trackId: '0gGSxG7r332R7Vgvk24GHY' },
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
       lights: { light1: { x: 0.745, y: 0.75, color: '#ff69b4' }, light2: { x: 0.755, y: 0.75, color: '#e8a44a' } },
-      lightAnimation: circle(
-        { startAngle: Math.PI, clockwise: true, radius: 0.3, speed: 0.8 }, 
-        { startAngle: 0, clockwise: true, radius: 0.3, speed: 0.8 }
+      lightAnimation: lightAnimationSequence(
+        { light1: { x: 0.745, y: 0.75 }, light2: { x: 0.755, y: 0.75 } },
+        [
+          { start_time: 0, animation: jitter(
+            { speed: 10, amplitude: 0.025 },
+            { speed: 10, amplitude: 0.025 }
+          ) },
+          { start_time: 9, animation: circle(
+            { startAngle: Math.PI, clockwise: true, radius: 0.3, speed: 0.8 },
+            { startAngle: 0, clockwise: true, radius: 0.3, speed: 0.8 }
+          ) },
+          { start_time: 18.2, moveTo: {
+            light1: { x: 0.745, y: 0.75, duration: 7.5 },
+            light2: { x: 0.755, y: 0.75, duration: 7.5 },
+            // beat: { bpm: 120, reverse_on_beats: [3, 4] },
+          } },
+          { start_time: 25.7, animation: circle(
+            { startAngle: 0, clockwise: true, radius: 0.02, speed: 17 },
+            { startAngle: 0, clockwise: true, radius: 0.02, speed: 17 }
+          ) },
+          { start_time: 28.2, animation: scaledSine(
+            { direction: 'vertical', distance: 0.25, duration: 5, amplitude: 0.1, frequency: 11, falloff: 'linear' },
+            { direction: 'vertical', distance: 0.25, duration: 5, amplitude: 0.1, frequency: 11, falloff: 'linear' },
+          ) },
+
+          { start_time: 33.2, moveTo: {
+            light1: { x: 0.6, y: 0.75, duration: 1 },
+            light2: { x: 0.9, y: 0.75, duration: 1 },
+          } },
+          { start_time: 34.2, animation: jitter(
+            { speed: 10, amplitude: 0.08 },
+            { speed: 10, amplitude: 0.08 }
+          ) },
+        ]
       ),
     },
   },
   {
-    spotify: { trackId: '3FjHWRfmNNYClBLZVtQAYT' },
+    autoScrollDelay: 5,
     foreground: HotInLove,
     background: {
       color: '#4ae8a4',
@@ -469,6 +498,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
+    autoScrollDelay: 5,
     foreground: FireTender,
     background: {
       color: '#4ae8a4',
@@ -477,6 +507,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
+    autoScrollDelay: 5,
     foreground: { type: 'picture', src: withBase("images/desk.jpeg") },
     background: {
       color: '#4ae8a4',
@@ -485,6 +516,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
+    autoScrollDelay: 10,
     foreground: { type: 'picture', src: withBase("images/wood_porch.jpeg"), caption: "Hawt" },
     background: {
       color: '#4ae8a4',
@@ -503,6 +535,7 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
+    autoScrollDelay: 28.5,
     foreground: { type: "picture", src: withBase("images/wood_with_ash.jpeg") },
     background: {
       color: '#4ae8a4',
@@ -510,14 +543,14 @@ export const entries: ScrollEntry[] = [
       lights: { light1: { x: 0.25, y: 0.75, color: '#ff69b4' }, light2: { x: 1.25, y: 0.75, color: '#e8a44a' } },
     },
     sceneEffect: sparkleLights({
-      count: 60,
+      count: 120,
       radiusMin: 0.01,
       radiusMax: 0.02,
       speedMin: 1,
       speedMax: 2,
       intensity: 0.5,
       fadeDurationSec: 1,
-      populateTime: 10,
+      populateTime: 20,
     }),
     foregroundAnimation: {
       type: 'imageSequence',
@@ -527,48 +560,65 @@ export const entries: ScrollEntry[] = [
           src: withBase('images/friends/ankle1.jpeg'),
           position: { x: '12%', y: '48%' },
           width: '20vw',
-          startTime: 0.4,
+          startTime: 2,
           endTime: 60,
         },
         {
           src: withBase('images/friends/ankle2.jpeg'),
           position: { x: '30%', y: '55%' },
           width: '18vw',
-          startTime: 0.4,
+          startTime: 4,
           endTime: 60,
         },
         {
           src: withBase('images/friends/bday.jpeg'),
           position: { x: '87%', y: '44%' },
           width: '20vw',
-          startTime: 0.9,
+          startTime: 6,
           endTime: 60,
         },
         {
           src: withBase('images/friends/olivia.jpeg'),
           position: { x: '16%', y: '88%' },
           width: '19vw',
-          startTime: 1.4,
+          startTime: 8,
           endTime: 60,
         },
         {
           src: withBase('images/friends/zendin.jpeg'),
           position: { x: '84%', y: '85%' },
           width: '19vw',
-          startTime: 1.9,
+          startTime: 10,
           endTime: 60,
         },
         {
           src: withBase('images/friends/tina.jpeg'),
           position: { x: '36%', y: '96%' },
           width: '18vw',
-          startTime: 2.4,
+          startTime: 12,
           endTime: 60,
         },
       ],
     },
   },
   {
+    autoScrollDelay: 5,
+    spotify: { trackId: '6dGnYIeXmHdcikdzNNDMm2' },
+    background: {
+      color: '#4ae8a4',
+      animationTime: 1.5,
+      lights: { light1: { x: 0.74, y: 1.1, color: '#4ae8a4' }, light2: { x: 0.76, y: 1.1, color: '#a44ae8' } },
+      lightAnimation: circle(
+        { startAngle: Math.PI, clockwise: false, radius: 0.01, speed: 2.5 },
+        { startAngle: Math.PI, clockwise: false, radius: 0.01, speed: 2.5 },
+      ),
+      objects: {
+        manta: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [0.15, 0.15, 0.15] },
+      }
+    },
+  },
+  {
+    autoScrollDelay: 5,
     spotify: "none",
     audio: { src: withBase('GettingBetter.m4a') },
     background: {
@@ -585,7 +635,8 @@ export const entries: ScrollEntry[] = [
     },
   },
   {
-    spotify: { trackId: '6dGnYIeXmHdcikdzNNDMm2' },
+    autoScrollDelay: 10,
+    spotify: { trackId: '6dGnYIeXmHdcikdzNNDMm2', song_start_time: 10000 },
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
@@ -596,10 +647,29 @@ export const entries: ScrollEntry[] = [
       ),
     },
   },
-
+  {
+    autoScrollDelay: "none",
+    spotify: "none",
+    foreground: { 
+      type: 'sideBySideRecordings', 
+      left: { icon: withBase("images/flags/american_flag.png"), recording: withBase("Gaby Bday - English.m4a") },
+      right: { icon: withBase("images/flags/australian_flag.png"), recording: withBase("Gaby Bday - Aussie.m4a") },
+      topCaption: "Click to listen",
+      bottomCaption: "Scroll to continue",
+    },
+    background: {
+      color: '#4ae8a4',
+      animationTime: 1.5,
+      lights: { light1: { x: 0.6, y: 0.6, color: '#e8a44a' }, light2: { x: 0.8, y: 0.8, color: '#a44ae8' } },
+      lightAnimation: gentleOrbit(0.05, 2),
+      objects: {
+        manta: { position: [10, -100, 10], rotation: [0, 1, 0], scale: [0.05, 0.05, 0.05] },
+      }
+    },
+  },
   {
     foreground: ClosingMessage,
-    spotify: { trackId: '6dGnYIeXmHdcikdzNNDMm2' },
+    spotify: { trackId: '0gGSxG7r332R7Vgvk24GHY', song_start_time: 67000 },
     background: {
       color: '#4ae8a4',
       animationTime: 1.5,
@@ -614,11 +684,11 @@ export const entries: ScrollEntry[] = [
   },
 ]
 
-export function getActiveTrackId(activeIndex: number): string | null {
+export function getActiveSpotify(activeIndex: number): { trackId: string; song_start_time?: number } | null {
   for (let i = activeIndex; i >= 0; i--) {
     const s = entries[i].spotify
     if (s === 'none') return null
-    if (s) return s.trackId
+    if (s) return s
   }
   return null
 }

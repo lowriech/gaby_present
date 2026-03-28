@@ -1,12 +1,25 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
-import { entries, getActiveTrackId } from './entries'
+import { entries, getActiveSpotify } from './entries'
 import CloudBackground from './components/CloudBackground'
 import OpeningMessage from './components/OpeningMessage'
 import PictureEntry from './components/PictureEntry'
+import SideBySideRecordings from './components/SideBySideRecordings'
 import ForegroundAnimationOverlay from './components/ForegroundAnimationOverlay'
 import { useEntryStore } from './store'
 import { useEntryAudio } from './hooks/useEntryAudio'
 import SpotifyPlayer from './components/SpotifyPlayer'
+import SpotifyLogin from './components/SpotifyLogin'
+import {
+  exchangeCode,
+  getStoredToken,
+  storeToken,
+  popVerifier,
+} from './spotify/auth'
+
+const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID as string
+const REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI as string
+
+type AuthState = 'loading' | 'login' | 'authenticated' | 'skipped'
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -15,7 +28,46 @@ export default function App() {
   const activeEntryIndex = useEntryStore((s) => s.activeEntryIndex)
   const { needsGesture, unlock } = useEntryAudio(activeEntryIndex)
   const [activatedEntries, setActivatedEntries] = useState<Set<number>>(() => new Set([0]))
-  const activeTrackId = getActiveTrackId(activeEntryIndex)
+  const activeSpotify = getActiveSpotify(activeEntryIndex)
+
+  const [authState, setAuthState] = useState<AuthState>('loading')
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+
+  // Handle OAuth callback and initial auth check on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+
+    if (code) {
+      const verifier = popVerifier()
+      if (verifier) {
+        exchangeCode(code, verifier, CLIENT_ID, REDIRECT_URI)
+          .then((tokenData) => {
+            storeToken(tokenData)
+            setAccessToken(tokenData.access_token)
+            setAuthState('authenticated')
+          })
+          .catch(() => {
+            setAuthState('login')
+          })
+          .finally(() => {
+            history.replaceState(null, '', window.location.pathname)
+          })
+      } else {
+        history.replaceState(null, '', window.location.pathname)
+        setAuthState('login')
+      }
+      return
+    }
+
+    const stored = getStoredToken()
+    if (stored) {
+      setAccessToken(stored.access_token)
+      setAuthState('authenticated')
+    } else {
+      setAuthState('login')
+    }
+  }, [])
 
   const activateEntry = useCallback((idx: number) => {
     setActiveEntryIndex(idx)
@@ -52,12 +104,13 @@ export default function App() {
 
   useEffect(() => {
     const entry = entries[activeEntryIndex]
-    if (!entry?.autoScrollDelay) return
+    const delay = entry?.autoScrollDelay ?? 10
+    if (delay === 'none') return
     const nextPanel = panelRefs.current[activeEntryIndex + 1]
     if (!nextPanel) return
     const id = setTimeout(() => {
       nextPanel.scrollIntoView({ behavior: 'smooth' })
-    }, entry.autoScrollDelay * 1000)
+    }, delay * 1000)
     return () => clearTimeout(id)
   }, [activeEntryIndex])
 
@@ -82,11 +135,22 @@ export default function App() {
               {entry.foreground?.type === 'picture' && (
                 <PictureEntry src={entry.foreground.src} caption={entry.foreground.caption} />
               )}
+              {entry.foreground?.type === 'sideBySideRecordings' && (
+                <SideBySideRecordings left={entry.foreground.left} right={entry.foreground.right} isActive={activatedEntries.has(i)} topCaption={entry.foreground.topCaption} bottomCaption={entry.foreground.bottomCaption} />
+              )}
             </div>
           ))}
         </div>
       </div>
-      <SpotifyPlayer trackId={activeTrackId} />
+      {authState !== 'loading' && (
+        <SpotifyPlayer
+          spotify={activeSpotify}
+          accessToken={authState === 'authenticated' ? accessToken : null}
+        />
+      )}
+      {authState === 'login' && (
+        <SpotifyLogin onSkip={() => setAuthState('skipped')} />
+      )}
       {needsGesture && (
         <button
           onClick={unlock}

@@ -6,6 +6,7 @@ import fragmentShader from '../shaders/cloud.frag'
 import { useScrollPosition } from '../hooks/useScrollPosition'
 import { entries, sceneObjects } from '../entries'
 import { extraLightsStore, messageEffectStore, MAX_SHADER_PULSES } from '../sceneEffects'
+import { resolveLightAnimation } from '../lightAnimations'
 import AnimatedSceneObject from './AnimatedSceneObject'
 
 const MAX_EXTRA_LIGHTS = 32
@@ -111,9 +112,9 @@ function SmokeQuad({ scrollY }: { scrollY: number }) {
     let baseL2y = a.from.l2y + (a.to.l2y - a.from.l2y) * t
 
     const idleT = Math.max(0, elapsed - (a.startTime + a.duration))
-    const idleFn = entries[a.currentStep].background.lightAnimation
-    if (idleT > 0 && idleFn) {
-      const offsets = idleFn(idleT)
+    const lightAnim = entries[a.currentStep].background.lightAnimation
+    if (idleT > 0 && lightAnim) {
+      const offsets = resolveLightAnimation(lightAnim, idleT)
       baseL1x += offsets.light1.dx
       baseL1y += offsets.light1.dy
       baseL2x += offsets.light2.dx
@@ -241,9 +242,9 @@ function ScenePointLights({ scrollY }: { scrollY: number }) {
     let cfgY2 = a.from.l2y + (a.to.l2y - a.from.l2y) * t
 
     const idleT = Math.max(0, elapsed - (a.startTime + a.duration))
-    const idleFn = entries[a.currentStep].background.lightAnimation
-    if (idleT > 0 && idleFn) {
-      const offsets = idleFn(idleT)
+    const lightAnim = entries[a.currentStep].background.lightAnimation
+    if (idleT > 0 && lightAnim) {
+      const offsets = resolveLightAnimation(lightAnim, idleT)
       cfgX1 += offsets.light1.dx
       cfgY1 += offsets.light1.dy
       cfgX2 += offsets.light2.dx
