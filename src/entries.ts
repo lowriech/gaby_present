@@ -130,14 +130,6 @@ const FirstDate = {
   revealDuration: 3000,
 } as Foreground
 
-const SafariText = {
-  type: "message",
-  text: `
-  Ohhh noooo... Not my rump!
-  `,  
-  revealDuration: 500,
-} as Foreground
-
 const Dating = {
   type: "picture",
   src: withBase("images/canoe.jpeg"),
